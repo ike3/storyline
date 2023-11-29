@@ -622,6 +622,7 @@ function storyline:GossipStart()
 	storyline.Text.Questtext.Complete:Hide()
 
 	-- Set GossipText
+	storyline.Variables.NPCTextOnClick = nil
 	local GossipText = ""
 	if storyline.Variables.GreetingsFlag == 1 then GossipText =  GetGreetingText()
 	else GossipText = GetGossipText() end
@@ -1987,8 +1988,8 @@ function storyline.Text:ConfigureFrame()
 		self.Questtext.Continue:SetHeight(20)
 		self.Questtext.Continue:SetJustifyH("LEFT")
 		self.Questtext.Continue:SetJustifyV("TOP")
-		self.Questtext.Continue:SetText("continue")
-		self.Questtext.Continue:SetTextColor(1,1,0.4)
+		self.Questtext.Continue:SetText("Continue")
+		self.Questtext.Continue:SetTextColor(0.4,1,0.4)
 
 	-- Complete Font
 	self.Questtext.Complete = storyline.Background.layer5.Questtext:CreateFontString(nil, "OVERLAY")
@@ -1999,8 +2000,18 @@ function storyline.Text:ConfigureFrame()
 		self.Questtext.Complete:SetJustifyH("LEFT")
 		self.Questtext.Complete:SetJustifyV("TOP")
 		self.Questtext.Complete:SetText("Complete quest")
-		self.Questtext.Complete:SetTextColor(1,1,0.4)
+		self.Questtext.Complete:SetTextColor(0.4,1,0.4)
 
+	-- More Font
+	self.Questtext.More = storyline.Background.layer5.Questtext:CreateFontString(nil, "OVERLAY")
+		self.Questtext.More:SetPoint("BOTTOM", 0, 0)
+		self.Questtext.More:SetFont("Fonts\\FRIZQT__.TTF", 10)
+		self.Questtext.More:SetWidth(100)
+		self.Questtext.More:SetHeight(20)
+		self.Questtext.More:SetJustifyH("LEFT")
+		self.Questtext.More:SetJustifyV("TOP")
+		self.Questtext.More:SetText("Continue")
+		self.Questtext.More:SetTextColor(0.4,1,0.4)
 end
 
 function storyline:AcceptQuest()
@@ -2022,6 +2033,7 @@ function storyline:AcceptQuest()
 	PlaySound("WriteQuest")
 
 	-- Set Questtext
+	storyline.Variables.NPCTextOnClick = "AcceptQuest"
 	local QuestText = GetQuestText()
 	storyline:ShowNPCText(QuestText)
 
@@ -2048,6 +2060,7 @@ function storyline:AcceptQuestOnClick()
 	storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() end)
 	storyline.Text.Questtext.Continue:Hide()
 
+	storyline.Variables.NPCTextOnClick = nil
 	local ObjectiveText = GetObjectiveText()
 	storyline:ShowNPCText("Quest Objectives: "..ObjectiveText,0)
 end
@@ -2077,6 +2090,7 @@ function storyline:ProgressQuest()
 	local QuestTitel = GetTitleText()
 	local ProgressText = GetProgressText()
 
+	storyline.Variables.NPCTextOnClick = "ProgressQuestObjectives"
 	storyline.Text.Banner:SetText(QuestTitel)
 	storyline:ShowNPCText(ProgressText)
 
@@ -2103,28 +2117,9 @@ function storyline:ProgressQuestObjectives()
 	storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() end)
 	storyline.Text.Questtext.Continue:Hide()
 
+	storyline.Variables.NPCTextOnClick = "CompleteQuest"
 	local ObjectiveText = storyline:GetObjectiveText()
 	storyline:ShowNPCText("Quest Objectives: "..ObjectiveText,0)
-
-	-- completeable?
-	if IsQuestCompletable() then
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function()
-											storyline.Background.layer5.Questtext:SetBackdropBorderColor(0,1,0,1)
-											end)
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1) end)
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() CompleteQuest() end)
-		storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1)
-		storyline.Text.Questtext.Complete:Show()
-		storyline.QuestProgress.Mainframe.State:SetBackdrop({bgFile = "Interface\\AddOns\\VanillaStoryline\\Assets\\Images\\ReadyCheck-Ready"})
-	else
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function() end)
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() end)
-		storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() end)
-		storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1)
-		storyline.Text.Questtext.Complete:Hide()
-		storyline.QuestProgress.Mainframe.State:SetBackdrop({bgFile = "Interface\\AddOns\\VanillaStoryline\\Assets\\Images\\ReadyCheck-NotReady"})
-	end
-
 end
 
 function storyline:CompleteQuest()
@@ -2150,6 +2145,7 @@ function storyline:CompleteQuest()
 	local QuestTitel = GetTitleText()
 	local RewardText = GetRewardText()
 
+	storyline.Variables.NPCTextOnClick = "QuestRewardComplete"
 	storyline.Text.Banner:SetText(QuestTitel)
 	storyline:ShowNPCText(RewardText)
 
@@ -2433,13 +2429,37 @@ function storyline:ResetModels()
 	storyline.Player.PlayerFrame:SetModelScale(1)
 end
 
--- Fill the Scrollframe + Fade
-function storyline:ShowNPCText(Text,Offset)
+local function splitString2( self, inSplitPattern, outResults )
+  if not inSplitPattern then
+    return
+  end
+  if not outResults then
+    outResults = { }
+  end
+  local theStart = 1
+  local theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+  while theSplitStart do
+    table.insert( outResults, string.sub( self, theStart, theSplitStart-1 ) )
+    theStart = theSplitEnd + 1
+    theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+  end
+  table.insert( outResults, string.sub( self, theStart ) )
+  return outResults
+end
 
-	-- set text offset
-	if not Offset then storyline.Options.Offset = 50
-	else storyline.Options.Offset = Offset end
+function print(s)
+    if (s ~= nil) then DEFAULT_CHAT_FRAME:AddMessage(s); else DEFAULT_CHAT_FRAME:AddMessage("nil"); end
+end
 
+function getTableSize(t)
+    local count = 0
+    for _, __ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+function storyline:ProgressNPCTextOnClick()
 	-- refresh Variables
 	storyline.Options.Fading = 0
 	storyline.Variables.fadingProgress = 0
@@ -2448,10 +2468,72 @@ function storyline:ShowNPCText(Text,Offset)
 	storyline.Variables.QuesttextLength = 0
 	storyline.Variables.LastTime = 0
 	storyline.Variables.Time = 0
-	
+	storyline.Variables.QuesttextLength = 0
+	local currentText = "?"
 
-	storyline.Variables.QuesttextLength = string.len(Text)
-	storyline.Text.Questtext.Font:SetText(Text)
+	storyline.Text.Questtext.Continue:Hide()
+	storyline.Text.Questtext.Complete:Hide()
+	
+	while storyline.Variables.QuesttextLength == 0 do
+		storyline.Variables.currentIndex = storyline.Variables.currentIndex + 1
+		
+		if storyline.Variables.currentIndex < getTableSize(storyline.Variables.texts) then
+			-- open clicking
+			storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function()
+																					storyline.Background.layer5.Questtext:SetBackdropBorderColor(0,1,0,1)
+																					end)
+			storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1) end)
+			storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() storyline:ProgressNPCTextOnClick() end)
+			storyline.Text.Questtext.More:Show()
+			
+			storyline.QuestDetail.GetQuest:Hide()
+			storyline.Gossip.Frame:Hide()
+		else
+			storyline.Text.Questtext.More:Hide()
+			if storyline.Variables.NPCTextOnClick == "ProgressQuestObjectives" then
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() storyline:ProgressQuestObjectives() end)
+				storyline.Text.Questtext.Continue:Show()
+			elseif storyline.Variables.NPCTextOnClick == "AcceptQuest" then
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() storyline:AcceptQuestOnClick() end)
+				storyline.Text.Questtext.Continue:Show()
+				storyline.QuestDetail.GetQuest:Show()
+			elseif storyline.Variables.NPCTextOnClick == "CompleteQuest" then
+				-- completeable?
+				if IsQuestCompletable() then
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function()
+														storyline.Background.layer5.Questtext:SetBackdropBorderColor(0,1,0,1)
+														end)
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1) end)
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() CompleteQuest() end)
+					storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1)
+					storyline.Text.Questtext.Complete:Show()
+					storyline.QuestProgress.Mainframe.State:SetBackdrop({bgFile = "Interface\\AddOns\\VanillaStoryline\\Assets\\Images\\ReadyCheck-Ready"})
+				else
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function() end)
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() end)
+					storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() end)
+					storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1)
+					storyline.QuestProgress.Mainframe.State:SetBackdrop({bgFile = "Interface\\AddOns\\VanillaStoryline\\Assets\\Images\\ReadyCheck-NotReady"})
+				end
+			elseif storyline.Variables.NPCTextOnClick == "QuestRewardComplete" then
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function() QuestRewardCompleteButton_OnClick(); DressUpFrame:Hide() end)
+				storyline.Text.Questtext.Complete:Show()
+			else
+				storyline.Background.layer5.Questtext:SetBackdropBorderColor(1,1,1,1)
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnEnter",function()  end)
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnLeave",function() end)
+				storyline.Background.layer5.Questtext.Fade.Button:SetScript("OnClick",function()  end)
+				storyline.Text.Questtext.Continue:Hide()
+				storyline.Gossip.Frame:Show()
+			end
+		end
+		
+		currentText = storyline.Variables.texts[storyline.Variables.currentIndex]
+		storyline.Variables.QuesttextLength = string.len(currentText)
+
+	end
+	
+	storyline.Text.Questtext.Font:SetText(currentText)
 	_,storyline.Variables.FontSize = storyline.Text.Questtext.Font:GetFont()
 	storyline.Variables.FontHeight = storyline.Text.Questtext.Font:GetHeight()
 	if storyline.Variables.FontHeight < 50 then storyline.Variables.FontHeight  = 50 end
@@ -2462,7 +2544,21 @@ function storyline:ShowNPCText(Text,Offset)
 		storyline.Background.layer5.Questtext.Slider:SetValue(0)
 	elseif QUEST_FADING_DISABLE == "0" then
 		storyline.Options.Fading = 1
-	end
+	end	
+end
+
+-- Fill the Scrollframe + Fade
+function storyline:ShowNPCText(Text,Offset)
+
+	-- set text offset
+	if not Offset then storyline.Options.Offset = 50
+	else storyline.Options.Offset = Offset end
+
+	-- refresh Variables
+	storyline.Variables.currentIndex = 0
+	storyline.Variables.texts = splitString2(Text, "\n")
+	
+	storyline:ProgressNPCTextOnClick()
 end
 
 -- hide frames after Eventcall
