@@ -665,7 +665,7 @@ function storyline:updateGossip()
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Font:SetText(arg[i])
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetID(ChooseID)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button.type = "Available"
-			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); GossipTitleButton_OnClick() end)
+			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); storyline:PlayerTalkAnimation(); GossipTitleButton_OnClick() end)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter]:Show()
 		end
  	end
@@ -679,7 +679,7 @@ function storyline:updateGossip()
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Font:SetText(arg[i])
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetID(ChooseID)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button.type = "Active"
-			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); GossipTitleButton_OnClick() end)
+			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); storyline:PlayerTalkAnimation(); GossipTitleButton_OnClick() end)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter]:Show()
 		end
  	end
@@ -693,7 +693,7 @@ function storyline:updateGossip()
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Font:SetText(arg[i])
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetID(ChooseID)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button.type = "Option"
-			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); GossipTitleButton_OnClick() end)
+			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); storyline:PlayerTalkAnimation(); GossipTitleButton_OnClick() end)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter]:Show()
 		end
  	end
@@ -718,7 +718,7 @@ function storyline:updateGossip()
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Font:SetText(GetActiveTitle(i))
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetID(ChooseID)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button.isActive = 1
-			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); QuestTitleButton_OnClick() end)
+			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); storyline:PlayerTalkAnimation(); QuestTitleButton_OnClick() end)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter]:Show()
 		end
 
@@ -729,7 +729,7 @@ function storyline:updateGossip()
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Font:SetText(GetAvailableTitle(i - numActiveQuests))
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetID(ChooseID)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button.isActive = 0
-			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); QuestTitleButton_OnClick() end)
+			storyline.Gossip.Frame.Scrollframe.Content.Block[counter].Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); storyline:PlayerTalkAnimation(); QuestTitleButton_OnClick() end)
 			storyline.Gossip.Frame.Scrollframe.Content.Block[counter]:Show()
 		end
 	end
@@ -777,6 +777,7 @@ function storyline.QuestDetail:ConfigureFrame()
 														GameTooltip:SetOwner(self.GetQuest.Accept, "ANCHOR_TOPRIGHT",20,-80);
 														GameTooltip:SetText("I accept.", 1, 1, 1, 1, 1);
 														GameTooltip:Show()
+														storyline:PlayerAcceptAnimation()
 													end)
 	self.GetQuest.Accept.Button:SetScript("OnLeave",function() GameTooltip:Hide() end)
 	self.GetQuest.Accept.Button:SetScript("OnClick",function() PlaySound("igMainMenuOptionCheckBoxOn"); AcceptQuest(); storyline.Background:Hide() end)
@@ -798,6 +799,7 @@ function storyline.QuestDetail:ConfigureFrame()
 														GameTooltip:SetOwner(self.GetQuest.Decline, "ANCHOR_TOPRIGHT",20,-80);
 														GameTooltip:SetText("I refuse.", 1, 1, 1, 1, 1);
 														GameTooltip:Show()
+														storyline:PlayerDeclineAnimation()
 													end)
 	self.GetQuest.Decline.Button:SetScript("OnLeave",function() GameTooltip:Hide() end)
 	self.GetQuest.Decline.Button:SetScript("OnClick",function() storyline:DeclineQuest();PlaySound("igQuestCancel"); end)
@@ -2149,12 +2151,12 @@ function storyline:CompleteQuest()
 	storyline.Text.Banner:SetText(QuestTitel)
 	storyline:ShowNPCText(RewardText)
 
-
 	-- show
 	storyline.Background:Show()
 	
 	-- Update PlayerFrames
 	storyline:UpdateModels()
+	storyline:PlayerCompleteAnimation()
 end
 
 -- Get Objective Text from QuestLog : Devlivers Objective Text from quest
@@ -2701,6 +2703,39 @@ function storyline:TalkAnimation()
 		storyline:playNPCAnimation(emoteNum,storyline.Animation.Database[storyline.NPC.PlayerFrame:GetModel()][emoteNum])
 	end
 end
+
+-- play player talk animation
+function storyline:PlayerTalkAnimation()
+	local emoteNum =  "60"
+	if storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()] and storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum] then
+		storyline:playPlayerAnimation(emoteNum,storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum])
+	end
+end
+
+-- play player talk animation
+function storyline:PlayerAcceptAnimation()
+	local emoteNum =  "185"
+	if storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()] and storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum] then
+		storyline:playPlayerAnimation(emoteNum,storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum])
+	end
+end
+
+-- play player talk animation
+function storyline:PlayerDeclineAnimation()
+	local emoteNum =  "186"
+	if storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()] and storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum] then
+		storyline:playPlayerAnimation(emoteNum,storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum])
+	end
+end
+
+-- play player talk animation
+function storyline:PlayerCompleteAnimation()
+	local emoteNum =  "68"
+	if storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()] and storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum] then
+		storyline:playPlayerAnimation(emoteNum,storyline.Animation.Database[storyline.Player.PlayerFrame:GetModel()][emoteNum])
+	end
+end
+
 
 -- chat inputs
 local function TextMenu(arg)
